@@ -1,6 +1,7 @@
 /build/
 /dist/
 /LICENSE
+/Mirror-windows-x64.zip
 /.cache/
 /.serena/
 *.user
