@@ -25,7 +25,6 @@ struct App {
     HWND close;
     Receiver *rx;
     AppPhase phase;
-    FirewallStatus firewall;
     bool fullscreen;
     RECT windowed;
     wchar_t airplay_name[256];
@@ -41,15 +40,17 @@ struct App {
 static App g_app;
 
 static void apply_chrome(HWND hwnd) {
+    DWMNCRENDERINGPOLICY nc;
     DWM_WINDOW_CORNER_PREFERENCE corner;
-    COLORREF chrome;
+    COLORREF border;
     BOOL dark;
     DWM_SYSTEMBACKDROP_TYPE backdrop;
-    corner = DWMWCP_ROUND;
+    nc = DWMNCRP_DISABLED;
+    DwmSetWindowAttribute(hwnd, DWMWA_NCRENDERING_POLICY, &nc, sizeof(nc));
+    corner = DWMWCP_DONOTROUND;
     DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, &corner, sizeof(corner));
-    chrome = tokens::background;
-    DwmSetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, &chrome, sizeof(chrome));
-    DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, &chrome, sizeof(chrome));
+    border = DWMWA_COLOR_NONE;
+    DwmSetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, &border, sizeof(border));
     dark = TRUE;
     DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &dark, sizeof(dark));
     backdrop = DWMSBT_NONE;
@@ -259,6 +260,7 @@ static void enter_fullscreen() {
     SetWindowPos(g_app.frame, HWND_TOP, mi.rcMonitor.left, mi.rcMonitor.top,
                  mi.rcMonitor.right - mi.rcMonitor.left, mi.rcMonitor.bottom - mi.rcMonitor.top,
                  SWP_FRAMECHANGED);
+    apply_chrome(g_app.frame);
     g_app.fullscreen = true;
     layout_chrome();
 }
@@ -299,12 +301,6 @@ static void paint_idle(HDC hdc, RECT rc) {
     DrawTextW(hdc, hint, -1, &r, DT_CENTER | DT_SINGLELINE);
     r.top += 22;
     DrawTextW(hdc, g_app.status, -1, &r, DT_CENTER | DT_SINGLELINE);
-    if (g_app.firewall == FirewallDenied) {
-        r.top += 22;
-        SetTextColor(hdc, tokens::error);
-        DrawTextW(hdc, L"Firewall blocked inbound traffic. Allow Mirror, then retry.", -1, &r,
-                  DT_CENTER | DT_SINGLELINE);
-    }
     SelectObject(hdc, old);
 }
 
@@ -399,6 +395,17 @@ static LRESULT CALLBACK frame_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
             return 0;
         }
         break;
+    case WM_NCPAINT:
+        return 0;
+    case WM_NCACTIVATE:
+        apply_chrome(hwnd);
+        return TRUE;
+    case WM_ACTIVATE:
+        apply_chrome(hwnd);
+        break;
+    case WM_DWMCOLORIZATIONCOLORCHANGED:
+        apply_chrome(hwnd);
+        return 0;
     case WM_NCHITTEST:
         return hit_frame(hwnd, lparam);
     case WM_SIZE:
@@ -570,13 +577,14 @@ int AppRun(HINSTANCE instance) {
     apply_chrome(g_app.frame);
     layout_chrome();
     GetModuleFileNameW(NULL, exe, MAX_PATH);
-    g_app.firewall = FirewallEnsureInbound(exe);
+    FirewallEnsureInbound(exe);
     g_app.rx = ReceiverCreate(g_app.frame);
     set_status(L"Starting receiver");
     if (!g_app.rx || !ReceiverStart(g_app.rx, g_app.video, g_app.airplay_name)) {
         set_status(L"Failed to start receiver");
     }
     ShowWindow(g_app.frame, SW_SHOW);
+    apply_chrome(g_app.frame);
     UpdateWindow(g_app.frame);
 
     while (GetMessageW(&msg, NULL, 0, 0) > 0) {

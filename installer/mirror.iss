@@ -1,5 +1,5 @@
 #define MyAppName "Mirror"
-#define MyAppVersion "1.1.0"
+#define MyAppVersion "1.1.1"
 #define MyAppPublisher "ff0l"
 #define MyAppURL "https://github.com/ff0l/phone-to-pc-mirror"
 #define MyAppExeName "Mirror.exe"
