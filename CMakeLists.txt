@@ -14,6 +14,11 @@ add_executable(Mirror WIN32
     app/receiver.cpp
     app/firewall.cpp
     app/icon.cpp
+    app/mirror.rc
+)
+set_source_files_properties(app/mirror.rc PROPERTIES
+    OBJECT_DEPENDS "${CMAKE_SOURCE_DIR}/assets/mirror.ico"
+    COMPILE_FLAGS "-I\"${CMAKE_SOURCE_DIR}/assets\""
 )
 
 target_compile_definitions(Mirror PRIVATE UNICODE _UNICODE)

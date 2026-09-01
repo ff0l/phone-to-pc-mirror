@@ -1,5 +1,5 @@
 param(
-    [ValidateSet("bootstrap", "build", "package")]
+    [ValidateSet("bootstrap", "build", "package", "installer")]
     [string]$Action = "package",
     [string]$MsysRoot = "C:\msys64"
 )
@@ -116,8 +116,58 @@ function Invoke-Package {
     }
 }
 
+function Find-Iscc {
+    foreach ($candidate in @(
+            (Join-Path ${env:ProgramFiles(x86)} "Inno Setup 6\ISCC.exe"),
+            (Join-Path $env:ProgramFiles "Inno Setup 6\ISCC.exe"),
+            (Join-Path $env:LOCALAPPDATA "Programs\Inno Setup 6\ISCC.exe")
+        )) {
+        if ($candidate -and (Test-Path $candidate)) {
+            return $candidate
+        }
+    }
+    $cmd = Get-Command iscc -ErrorAction SilentlyContinue
+    if ($cmd) {
+        return $cmd.Source
+    }
+    return $null
+}
+
+function Install-Iscc {
+    $winget = Get-Command winget -ErrorAction SilentlyContinue
+    if (-not $winget) {
+        throw "Inno Setup is required. Install it from https://jrsoftware.org/isinfo.php"
+    }
+    & $winget.Source install --id JRSoftware.InnoSetup -e --accept-package-agreements --accept-source-agreements --disable-interactivity
+    if ($LASTEXITCODE -ne 0) {
+        throw "winget failed to install Inno Setup"
+    }
+}
+
+function Invoke-Installer {
+    Invoke-Package
+    $iscc = Find-Iscc
+    if (-not $iscc) {
+        Install-Iscc
+        $iscc = Find-Iscc
+    }
+    if (-not $iscc) {
+        throw "ISCC.exe not found after Inno Setup install"
+    }
+    $script = Join-Path $Repo "installer\mirror.iss"
+    $packed = Join-Path $Repo "dist\Mirror.exe"
+    if (-not (Test-Path $packed)) {
+        throw "dist\Mirror.exe missing; package failed"
+    }
+    & $iscc $script
+    if ($LASTEXITCODE -ne 0) {
+        throw "Inno Setup compile failed"
+    }
+}
+
 switch ($Action) {
     "bootstrap" { Invoke-Bootstrap }
     "build" { Invoke-Build }
     "package" { Invoke-Package }
+    "installer" { Invoke-Installer }
 }

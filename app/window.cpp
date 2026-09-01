@@ -3,6 +3,7 @@
 #include "firewall.h"
 #include "icon.h"
 #include "receiver.h"
+#include "resource.h"
 #include "tokens.h"
 
 #include <dwmapi.h>
@@ -40,21 +41,19 @@ struct App {
 static App g_app;
 
 static void apply_chrome(HWND hwnd) {
-    MARGINS margins;
     DWM_WINDOW_CORNER_PREFERENCE corner;
-    COLORREF border;
+    COLORREF chrome;
     BOOL dark;
-    margins.cxLeftWidth = 0;
-    margins.cxRightWidth = 0;
-    margins.cyTopHeight = 0;
-    margins.cyBottomHeight = 1;
-    DwmExtendFrameIntoClientArea(hwnd, &margins);
+    DWM_SYSTEMBACKDROP_TYPE backdrop;
     corner = DWMWCP_ROUND;
     DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, &corner, sizeof(corner));
-    border = DWMWA_COLOR_NONE;
-    DwmSetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, &border, sizeof(border));
+    chrome = tokens::background;
+    DwmSetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, &chrome, sizeof(chrome));
+    DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, &chrome, sizeof(chrome));
     dark = TRUE;
     DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &dark, sizeof(dark));
+    backdrop = DWMSBT_NONE;
+    DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, &backdrop, sizeof(backdrop));
 }
 
 static LRESULT hit_frame(HWND hwnd, LPARAM lparam) {
@@ -535,6 +534,9 @@ int AppRun(HINSTANCE instance) {
     frame_class.style = CS_HREDRAW | CS_VREDRAW;
     frame_class.lpfnWndProc = frame_proc;
     frame_class.hInstance = instance;
+    frame_class.hIcon = LoadIconW(instance, MAKEINTRESOURCEW(IDI_APP));
+    frame_class.hIconSm = (HICON)LoadImageW(instance, MAKEINTRESOURCEW(IDI_APP), IMAGE_ICON,
+                                            GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
     frame_class.hCursor = LoadCursor(NULL, IDC_ARROW);
     frame_class.hbrBackground = g_app.brush_bg;
     frame_class.lpszClassName = L"MirrorFrame";

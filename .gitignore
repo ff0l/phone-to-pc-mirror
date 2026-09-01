@@ -2,6 +2,7 @@
 /dist/
 /LICENSE
 /Mirror-windows-x64.zip
+/Mirror-Setup-x64.exe
 /.cache/
 /.serena/
 *.user

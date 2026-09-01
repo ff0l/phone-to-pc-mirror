@@ -10,9 +10,11 @@ No iPhone app. No account. Same Wi-Fi as the phone.
 
 Written by [ff0l](https://github.com/ff0l).
 
+You can just use the installer. Download `Mirror-Setup-x64.exe` from [Releases](https://github.com/ff0l/phone-to-pc-mirror/releases), run the wizard, then search **Mirror** in the Start menu. No unzip.
+
 ## Use
 
-1. Run `Mirror.exe` from the release zip, or from `dist\` after a build.
+1. Install with `Mirror-Setup-x64.exe`, or run `Mirror.exe` from a local `dist\` build.
 2. Set the Windows network profile to **Private** and allow the firewall prompt.
 3. On the iPhone: Control Center → **Screen Mirroring** → the name in the window (this PC’s computer name).
 4. Stay on Screen Mirroring. Do not tap AirPlay inside TikTok or YouTube. That sends the clip only.
@@ -30,15 +32,18 @@ Protected apps (Netflix and similar) stay black. That is Apple DRM.
 
 ## Release
 
-A standalone Windows build is on [Releases](https://github.com/ff0l/phone-to-pc-mirror/releases). Unzip and run `Mirror.exe`. Keep the DLLs and `lib\` folder next to the exe.
+[Releases](https://github.com/ff0l/phone-to-pc-mirror/releases) has `Mirror-Setup-x64.exe`. That is the normal way to get the app. After setup, Start search finds **Mirror**. Uninstall from Settings → Apps.
+
+`.\scripts\build.ps1 package` still writes a portable `dist\` tree if you want the unzip-and-run copy.
 
 ## Tree
 
 ```
 app/                    Win32 host
-scripts/build.ps1       MSYS2 build and portable package
+installer/mirror.iss    Inno Setup wizard
+scripts/build.ps1       MSYS2 build, portable package, installer
 third_party/uxplay      UxPlay 1.74, library mode
-assets/                 close-button font
+assets/                 icon and close-button font
 docs/                   screenshots
 ```
 
@@ -48,16 +53,17 @@ Windows 10 or 11. [MSYS2](https://www.msys2.org/) at `C:\msys64`.
 
 ```powershell
 .\scripts\build.ps1 bootstrap
-.\scripts\build.ps1 package
+.\scripts\build.ps1 installer
 ```
 
-`bootstrap` installs the UCRT64 toolchain and GStreamer. `package` compiles a Release build and writes `dist\Mirror.exe` plus the runtime.
+`bootstrap` installs the UCRT64 toolchain and GStreamer. `installer` compiles a Release build, writes `dist\`, then builds `Mirror-Setup-x64.exe`. Inno Setup 6 is installed via winget if it is missing.
 
 ```powershell
+.\scripts\build.ps1 package
 .\scripts\build.ps1 build
 ```
 
-Compile only. Output is `build\Mirror.exe`. Run the packaged `dist\` copy, not the bare build exe.
+`package` writes the portable `dist\` tree. `build` compiles only to `build\Mirror.exe`. Run the packaged `dist\` copy, not the bare build exe.
 
 ## Notes
 
