@@ -1,0 +1,14 @@
+[Unit]
+Description=AirPlay Unix mirroring server
+# uncomment next two lines if UxPlay is compiled to use avahi
+#Requires=avahi-daemon
+#After=avahi-daemon
+
+[Service]
+Type=simple
+ExecStart=uxplay
+Restart=on-failure
+#StandardOutput=file:%h/uxplay.log
+
+[Install]
+WantedBy=default.target

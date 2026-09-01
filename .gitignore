@@ -1,0 +1,10 @@
+/build/
+/dist/
+/LICENSE
+/.cache/
+/.serena/
+*.user
+*.log
+Thumbs.db
+Desktop.ini
+CMakeUserPresets.json
